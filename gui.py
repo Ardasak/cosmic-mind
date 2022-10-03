@@ -1,4 +1,3 @@
-from re import S
 from PyQt5.QtWidgets import *
 from PyQt5 import QtGui
 from styles import styles
@@ -6,6 +5,7 @@ from PyQt5.QtCore import Qt
 import sys
 import os
 import dotenv
+import stable_diffusion as sd
 
 # Initializing translator and keyword searching system.
 
@@ -19,19 +19,18 @@ class Window(QWidget):
         self.main_layout = QHBoxLayout()
         self.layout_vertical_for_inputs = QVBoxLayout()
 
+        dotenv.load_dotenv()
+        self.generator = sd.StableDiffusion(os.getenv("api_key"))
+
         self.init_image_submitted = False
         self.mask_image_submitted = False
 
-        self.output_image = QLabel(self)
-        self.output_image.setStyleSheet(styles.text_style)
-        self.output_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.init_image_path = None
+        self.mask_image_path = None
 
-        self.label = QLabel("Preparing...", self)
-        self.label.setAlignment(
-            Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop
-        )
-        self.label.setStyleSheet(styles.text_style)
-        self.label.setVisible(False)
+        self.output_image = QLabel(self)
+        self.output_image.setStyleSheet(styles.image_style)
+        self.output_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.environment = os.environ["HOMEPATH"]
         self.dir = os.getcwd()
@@ -70,8 +69,9 @@ class Window(QWidget):
         self.output_path_button.setStyleSheet(styles.button_style)
         self.output_path_button.clicked.connect(self.modify_output_path)
 
-        self.create_button = QPushButton("Save")
+        self.create_button = QPushButton("Generate")
         self.create_button.setStyleSheet(styles.button_style)
+        self.create_button.clicked.connect(self.generate)
 
         self.reset_button = QPushButton("Reset")
         self.reset_button.setStyleSheet(styles.button_style)
@@ -88,7 +88,7 @@ class Window(QWidget):
                 self.init_image_submitted = True
         else:
             self.init_image_submitted = False
-            self.init_image_path = ""
+            self.init_image_path = None
             self.init_image_button.setText("Reference Image")
             
         
@@ -101,7 +101,7 @@ class Window(QWidget):
                 self.mask_image_submitted = True
         else:
             self.mask_image_submitted = False
-            self.mask_image_path = ""
+            self.mask_image_path = None
             self.mask_image_button.setText("Reference Image")
 
     def reset(self):
@@ -111,12 +111,11 @@ class Window(QWidget):
         self.stepsInput.setValue(25)
         self.widthInput.setValue(512)
         self.heightInput.setValue(512)
-        self.label.setVisible(False)
         self.init_image_submitted = False
-        self.init_image_path = ""
+        self.init_image_path = None
         self.init_image_button.setText("Referance Image")
         self.mask_image_submitted = False
-        self.mask_image_path = ""
+        self.mask_image_path = None
         self.mask_image_button.setText("Mask Image")
 
     def placement(self):
@@ -134,7 +133,6 @@ class Window(QWidget):
         inputs_box.addWidget(self.mask_image_button)
 
         outputs_box = QHBoxLayout()
-        outputs_box.addWidget(self.label)
         outputs_box.addWidget(self.output_image)
 
         self.layout_vertical_for_inputs.addWidget(self.textInput)
@@ -165,11 +163,27 @@ class Window(QWidget):
         if self.dir == "":
             self.dir = self.temp_path
 
-    def error_check(self):
-
-
     def generate(self):
-        
+        try:
+            if self.textInput.toPlainText() != "" :
+                self.create_button.setEnabled(False)
+                self.message_box(QMessageBox.Icon.Information, QMessageBox.Ok, "Information", "Your image will be ready soon.")
+                image = self.generator.generate(prompt=self.textInput.toPlainText(), 
+                steps=self.stepsInput.value(), 
+                init_image=self.init_image_path if self.init_image_path != None else None, 
+                mask_image=self.mask_image_path if self.mask_image_path != None else None, 
+                width=self.widthInput.value(), 
+                height=self.heightInput.value())
+                image.save(self.dir + "/cosmic-mind-output.png")
+                pixmap = QtGui.QPixmap(self.dir + "/cosmic-mind-output.png")
+                self.output_image.setPixmap(pixmap)
+                self.output_image.setVisible(True)
+                    
+            else:
+                self.message_box(QMessageBox.Icon.Warning, QMessageBox.Ok, "Warning", "Please provide a text.")
+        except:
+            self.message_box(QMessageBox.Icon.Critical, QMessageBox.Ok, "Error!", "An unexpected error occured, please try again.")
+        self.create_button.setEnabled(True)
 
 
 class MainWindow(QMainWindow):

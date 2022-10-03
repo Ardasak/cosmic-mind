@@ -6,6 +6,16 @@ class styles:
         background-color: rgba(255, 255, 255, .0);
     }
     """
+    image_style = """
+    QLabel{
+        max-height: 512px;
+        max-width: 512px;
+        min-height: 50px;
+        min-width: 50px;
+        color: white;
+        background-color: rgba(255, 255, 255, .0);
+    }
+    """
     spinbox_style = """
     QSpinBox{
         background: white;
