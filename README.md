@@ -4,4 +4,4 @@ All you have to do to run Cosmic Mind is to download Python, necessary libraries
 - To install libraries, you can basically run this command in the root directory:
 `pip install -r requirements.txt`
 - And then please run the gui.py file with the following command:
-`python gui.py`
+`python3 gui.py`
